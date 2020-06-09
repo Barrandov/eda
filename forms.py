@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, RadioField, HiddenField, FieldList
-from wtforms.validators import InputRequired, Length, email_validator
+from wtforms.validators import InputRequired, Length
 
 
 class BookingForm(FlaskForm):
@@ -13,6 +13,6 @@ class BookingForm(FlaskForm):
     order_cart = HiddenField('order_cart')
 
 
-class RegistrationFrom(FlaskForm):
-    email = StringField('Email', [InputRequired])
-    password = StringField('Password', [InputRequired])
+class RegistrationForm(FlaskForm):
+    email = StringField('Email', [InputRequired()])
+    password = StringField('Password', [InputRequired()])

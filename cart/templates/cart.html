@@ -3,14 +3,16 @@
 <main class="container">
 
     <h1 class="h3 my-4">Корзина</h1>
+    {% if not current_user.is_authenticated %}
     <div class="alert alert-warning" role="alert">Чтобы сделать заказ – <a href="/login.html">войдите</a> или <a
             href="/register.html">зарегистрируйтесь</a></div>
+    {% endif %}
 
         {% for err in form.phone.errors %}
         <div class="alert alert-danger" role="alert">{{ err }} 😢</div>
         {% endfor %}
 
-    {% if total != 0 %}
+    {% if total != 0 and current_user.is_authenticated %}
     <div class="row mt-5">
 
         <div class="col-4">

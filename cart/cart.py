@@ -1,7 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, url_for
+from flask_security import current_user
+from time import gmtime, strftime
 
-from eda.models import Order, Meal, db
-from eda.forms import BookingForm
+from models import Order, Meal, db
+from forms import BookingForm
+
 
 cart = Blueprint('cart', __name__, template_folder='templates')
 
@@ -22,12 +25,12 @@ def cart_render():
                             'order_cart': form.order_cart.data
                             }
 
-            request_to_db = Order(date='today',
+            request_to_db = Order(date=(strftime("%Y-%m-%d %H:%M", gmtime())),
                                   total=request_data['order_summ'],
                                   status='Pending',
                                   phone=request_data['phone'],
                                   address=request_data['address'],
-                                  user_id=None
+                                  user_id=current_user.id
                                   )
 
             db.session.add(request_to_db)
@@ -38,6 +41,7 @@ def cart_render():
 
             db.session.commit()
             session['order'] = request_to_db.id
+            session.pop('cart')
             return redirect(url_for('cart.ordered_render'))
 
     if not session.get('cart') is None:
@@ -52,7 +56,10 @@ def cart_render():
                 cart_items[item.id][2] += 1
 
     final_total = lambda sum: str(f'{sum:,}').replace(',', ' ')
-    return render_template('cart.html', form=form, cart_items=cart_items, total=total, total_cool=final_total(total))
+    return render_template('cart.html', form=form,
+                           cart_items=cart_items,
+                           total=total,
+                           total_cool=final_total(total))
 
 
 @cart.route('/delete/<int:id>/')
@@ -73,10 +80,12 @@ def cart_delete_render(id):
 def add_render(id):
     meal_by_id = db.session.query(Meal).get_or_404(id)
     cart_session = session.get('cart', [])
-    cart_session.append(meal_by_id.id)
-    session['cart'] = cart_session
-    flash(meal_by_id.title, 'add')
-
+    if not meal_by_id.id in cart_session:
+        cart_session.append(meal_by_id.id)
+        session['cart'] = cart_session
+        flash(meal_by_id.title, 'add')
+    else:
+        flash(meal_by_id.title, 'exists')
     return redirect(request.referrer)
 
 
@@ -85,5 +94,6 @@ def ordered_render():
     if not session.get('order') is None:
         id = session['order']
         session.pop('order')
+
         return render_template('ordered.html', id=id)
     return 'Может все таки заказик сначала?'
