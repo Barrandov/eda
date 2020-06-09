@@ -1,6 +1,8 @@
-from flask import Flask, session
+from flask import Flask, session, redirect, url_for, request
 from flask_migrate import Migrate
 from flask_security import Security, user_registered, current_user
+from flask_admin import AdminIndexView, Admin
+from flask_admin.contrib.sqla import ModelView
 
 from models import *
 from config import Config
@@ -11,19 +13,41 @@ from account.account import account
 
 app = Flask(__name__)
 app.config.from_object(Config)
-
-app.config['SECURITY_SEND_REGISTER_EMAIL'] = False
-
-
 db.init_app(app)
 migrate = Migrate(app, db)
+
+
+
+class AdminMixin:
+    def is_accessible(self):
+        return current_user.has_role('admin')
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('security.login', next=request.url))
+
+
+class AdminView(AdminMixin, ModelView):
+    pass
+
+
+class HomeAdminView(AdminMixin, AdminIndexView):
+    pass
+
+admin = Admin(app, 'FlaskApp', url='/', index_view=HomeAdminView(name='Home'))
+
+admin.add_view(AdminView(User, db.session))
+admin.add_view(AdminView(Role, db.session))
+admin.add_view(AdminView(Order, db.session))
+admin.add_view(AdminView(Meal, db.session))
+admin.add_view(AdminView(Category, db.session))
+
+
 
 security = Security(app, user_datastore)
 
 app.register_blueprint(index, url_prefix='/')
 app.register_blueprint(cart, url_prefix='/cart/')
 app.register_blueprint(account, url_prefix='/account/')
-
 
 
 @app.context_processor

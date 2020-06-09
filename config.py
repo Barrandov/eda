@@ -5,4 +5,5 @@ class Config:
     SECURITY_PASSWORD_SALT = 'sha512_crypt'
     SECURITY_PASSWORD_HASH = 'sha512_crypt'
     SECURITY_REGISTERABLE = True
+    SECURITY_SEND_REGISTER_EMAIL = False
 
